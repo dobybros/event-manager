@@ -1,7 +1,7 @@
 import {matchPattern, MatchParams} from './matchPattern';
 
 export type EventType = string | number | boolean | RegExp | null | undefined;
-export type EventHandler = (event?: Event) => void;
+export type EventHandler = (event?: EventPayload, type?: EventType, matchParams?: MatchParams) => void;
 
 export type Event<T extends EventPayload = {}> = T & {
     type: EventType;
@@ -42,17 +42,18 @@ export class EventManager {
         return listener;
     }
     dispatch(type: EventType, payload?: EventPayload): void {
-        let event: Event = {...payload, type};
         for (let listener of this.listeners) {
-            if (this.shouldCallListener(listener, event))
-                listener.handler(this.toHandlerPayload(listener, event));
+            if (this.shouldCallListener(listener, type)) {
+                const matchedParams = this.toHandlerPayload(listener, type);
+                listener.handler(payload, type, matchedParams);
+            }
         }
     }
-    shouldCallListener(listener: EventListener, event: Event): boolean {
-        return matchPattern(listener.type, event.type) !== null;
+    shouldCallListener(listener: EventListener, eventType: EventType): boolean {
+        return matchPattern(listener.type, eventType) !== null;
     }
-    toHandlerPayload(listener: EventListener, event: Event): Event {
-        let params = matchPattern(listener.type, event.type);
-        return {...event, params};
+    toHandlerPayload(listener: EventListener, eventType: EventType): MatchParams {
+        let params = matchPattern(listener.type, eventType);
+        return params;
     }
 }

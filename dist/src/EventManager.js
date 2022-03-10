@@ -1,5 +1,6 @@
 import { matchPattern } from './matchPattern';
 export class EventManager {
+    listeners;
     constructor() {
         this.listeners = [];
     }
@@ -18,17 +19,18 @@ export class EventManager {
         return listener;
     }
     dispatch(type, payload) {
-        let event = { ...payload, type };
         for (let listener of this.listeners) {
-            if (this.shouldCallListener(listener, event))
-                listener.handler(this.toHandlerPayload(listener, event));
+            if (this.shouldCallListener(listener, type)) {
+                const matchedParams = this.toHandlerPayload(listener, type);
+                listener.handler(payload, type, matchedParams);
+            }
         }
     }
-    shouldCallListener(listener, event) {
-        return matchPattern(listener.type, event.type) !== null;
+    shouldCallListener(listener, eventType) {
+        return matchPattern(listener.type, eventType) !== null;
     }
-    toHandlerPayload(listener, event) {
-        let params = matchPattern(listener.type, event.type);
-        return { ...event, params };
+    toHandlerPayload(listener, eventType) {
+        let params = matchPattern(listener.type, eventType);
+        return params;
     }
 }
